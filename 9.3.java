@@ -22,7 +22,6 @@ public class Main {
         }
 
         Map<String, Integer> counts = new HashMap<>();
-
         for (String item : orders) {
             counts.put(item, counts.getOrDefault(item, 0) + 1);
         }
@@ -30,7 +29,7 @@ public class Main {
         String bestItem = orders[0];
         int bestCount = counts.get(bestItem);
 
-        // Scan original order; update only for a strictly higher count.
+        // Keep the first item in case of a tie.
         for (String item : orders) {
             int count = counts.get(item);
             if (count > bestCount) {
@@ -42,8 +41,25 @@ public class Main {
         return new Result(bestItem, bestCount);
     }
 
+    static boolean hasPairWithSum(int[] nums, int target) {
+        Set<Long> seen = new HashSet<>();
+
+        for (int number : nums) {
+            long complement = (long) target - number;
+            if (seen.contains(complement)) {
+                return true;
+            }
+            seen.add((long) number);
+        }
+
+        return false;
+    }
+
     public static void main(String[] args) {
         String[] orders = {"tea", "coffee", "coffee", "tea"};
         System.out.println(mostPopular(orders));
+
+        System.out.println(hasPairWithSum(new int[]{2, 7, 11, 15}, 9));
+        System.out.println(hasPairWithSum(new int[]{3, 4, 6}, 20));
     }
 }
