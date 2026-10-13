@@ -1,61 +1,58 @@
-import java.util.*;
-
 public class Main {
-    static class Student {
-        String rollNumber;
-        String name;
+    static class Node {
+        int data;
+        Node next;
 
-        Student(String rollNumber, String name) {
-            this.rollNumber = rollNumber;
-            this.name = name;
-        }
-
-        // Equality is based only on roll number.
-        @Override
-        public boolean equals(Object object) {
-            if (!(object instanceof Student)) return false;
-            Student other = (Student) object;
-            return rollNumber.equals(other.rollNumber);
-        }
-
-        @Override
-        public int hashCode() {
-            return rollNumber.hashCode();
+        Node(int data) {
+            this.data = data;
         }
     }
 
-    public static void main(String[] args) {
-        Set<Student> members = new HashSet<>();
-        List<String> output = new ArrayList<>();
-        Scanner scanner = new Scanner(System.in);
-        boolean countPrinted = false;
+    static Node reverse(Node head) {
+        Node previous = null;
+        Node current = head;
 
-        while (scanner.hasNextLine()) {
-            String line = scanner.nextLine().trim();
-            if (line.isEmpty()) continue;
+        while (current != null) {
+            Node next = current.next; // Save the rest of the list.
+            current.next = previous;  // Reverse this link.
+            previous = current;
+            current = next;
+        }
 
-            String[] parts = line.split("\\s+");
-            Student student = new Student(parts[1], parts[2]);
+        return previous; // New head.
+    }
 
-            if (parts[0].equalsIgnoreCase("ADD")) {
-                output.add(members.add(student) ? "Added" : "duplicate rejected");
-            } else if (parts[0].equalsIgnoreCase("CONTAINS")) {
-                if (!countPrinted) {
-                    output.add("member count " + members.size());
-                    countPrinted = true;
-                }
-                output.add("contains: " + members.contains(student));
+    static Node createList(int... values) {
+        Node head = null;
+        Node tail = null;
+
+        for (int value : values) {
+            Node node = new Node(value);
+            if (head == null) {
+                head = node;
+                tail = node;
+            } else {
+                tail.next = node;
+                tail = node;
             }
         }
+        return head;
+    }
 
-        if (!countPrinted) {
-            output.add("member count " + members.size());
+    static void printList(Node head) {
+        Node current = head;
+        while (current != null) {
+            System.out.print(current.data + " -> ");
+            current = current.next;
         }
+        System.out.println("null");
+    }
 
-        for (String line : output) {
-            System.out.println(line);
-        }
+    public static void main(String[] args) {
+        Node queue = createList(1, 2, 3, 4);
+        printList(reverse(queue)); // 4 -> 3 -> 2 -> 1 -> null
 
-        scanner.close();
+        Node singlePersonQueue = createList(9);
+        printList(reverse(singlePersonQueue)); // 9 -> null
     }
 }

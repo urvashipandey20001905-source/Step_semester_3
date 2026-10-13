@@ -1,76 +1,96 @@
-import java.util.*;
-
 public class Main {
-    static class StudentMarks {
+    static class Node {
         String name;
-        int[] marks;
+        Node prev;
+        Node next;
 
-        StudentMarks(String name, int[] marks) {
+        Node(String name) {
             this.name = name;
-            this.marks = marks;
+        }
+    }
+
+    static class Train {
+        private Node head;
+        private Node tail;
+
+        public void addLast(String name) {
+            Node node = new Node(name);
+
+            if (head == null) {
+                head = tail = node;
+            } else {
+                tail.next = node;
+                node.prev = tail;
+                tail = node;
+            }
         }
 
-        int total() {
-            return marks[0] + marks[1] + marks[2];
+        // Removes the first coach with this name.
+        public boolean remove(String name) {
+            Node current = head;
+
+            // Find the coach.
+            while (current != null && !current.name.equals(name)) {
+                current = current.next;
+            }
+
+            if (current == null) {
+                return false;
+            }
+
+            // Connect the previous coach to the next coach.
+            if (current.prev != null) {
+                current.prev.next = current.next;
+            } else {
+                head = current.next;
+            }
+
+            // Connect the next coach to the previous coach.
+            if (current.next != null) {
+                current.next.prev = current.prev;
+            } else {
+                tail = current.prev;
+            }
+
+            return true;
+        }
+
+        public void printForward() {
+            System.out.print("Forward: ");
+            Node current = head;
+
+            while (current != null) {
+                System.out.print(current.name);
+                if (current.next != null) System.out.print(" <-> ");
+                current = current.next;
+            }
+            System.out.println();
+        }
+
+        public void printBackward() {
+            System.out.print("Backward: ");
+            Node current = tail;
+
+            while (current != null) {
+                System.out.print(current.name);
+                if (current.prev != null) System.out.print(" <-> ");
+                current = current.prev;
+            }
+            System.out.println();
         }
     }
 
     public static void main(String[] args) {
-        List<StudentMarks> students = new ArrayList<>();
-        int[] subjectTotals = new int[3];
-        Scanner scanner = new Scanner(System.in);
+        Train train = new Train();
+        train.addLast("Engine");
+        train.addLast("A1");
+        train.addLast("B1");
+        train.addLast("B2");
+        train.addLast("Guard");
 
-        while (scanner.hasNextLine()) {
-            String line = scanner.nextLine().trim();
-            if (line.isEmpty()) continue;
+        train.remove("B1");
 
-            String[] parts = line.split("\\s+", 2);
-            String name = parts[0];
-
-            String marksText = parts[1]
-                    .replace("[", "")
-                    .replace("]", "")
-                    .replace(",", " ")
-                    .trim();
-
-            String[] values = marksText.split("\\s+");
-            int[] marks = new int[3];
-
-            for (int i = 0; i < 3; i++) {
-                marks[i] = Integer.parseInt(values[i]);
-                subjectTotals[i] += marks[i];
-            }
-
-            students.add(new StudentMarks(name, marks));
-        }
-
-        if (students.isEmpty()) {
-            scanner.close();
-            return;
-        }
-
-        StringBuilder totalsOutput = new StringBuilder("Totals ");
-        StudentMarks topper = students.get(0);
-
-        for (int i = 0; i < students.size(); i++) {
-            StudentMarks student = students.get(i);
-
-            if (i > 0) totalsOutput.append(", ");
-            totalsOutput.append(student.name).append(" ").append(student.total());
-
-            if (student.total() > topper.total()) {
-                topper = student;
-            }
-        }
-
-        System.out.println(totalsOutput);
-
-        System.out.printf(Locale.US, "averages %.2f, %.2f, %.2f%n",
-                subjectTotals[0] / (double) students.size(),
-                subjectTotals[1] / (double) students.size(),
-                subjectTotals[2] / (double) students.size());
-
-        System.out.println("topper " + topper.name + " (" + topper.total() + ")");
-        scanner.close();
+        train.printForward();
+        train.printBackward();
     }
 }

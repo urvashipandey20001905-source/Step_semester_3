@@ -1,110 +1,52 @@
-import java.util.*;
-
 public class Main {
-    static abstract class Staff {
+    static class Node {
         String name;
+        Node next;
 
-        Staff(String name) {
+        Node(String name) {
             this.name = name;
         }
-
-        abstract String type();
-        abstract double pay();
-
-        String payslip() {
-            return "Payslip[name=" + name + ", type=" + type()
-                    + ", pay=" + formatPay(pay()) + "]";
-        }
     }
 
-    static class FullTime extends Staff {
-        double salary;
+    static class CircularPlayerList {
+        private Node tail;
 
-        FullTime(String name, double salary) {
-            super(name);
-            this.salary = salary;
+        public void addLast(String name) {
+            Node node = new Node(name);
+
+            if (tail == null) {
+                tail = node;
+                node.next = node; // First player points to itself.
+            } else {
+                node.next = tail.next; // Link to the head.
+                tail.next = node;
+                tail = node;
+            }
         }
 
-        String type() { return "FullTime"; }
-        double pay() { return salary; }
-    }
+        public void printTurns(int turns) {
+            if (tail == null) {
+                System.out.println("No players");
+                return;
+            }
 
-    static class PartTime extends Staff {
-        double hours;
-        double rate;
+            Node current = tail.next; // Head of the circle.
 
-        PartTime(String name, double hours, double rate) {
-            super(name);
-            this.hours = hours;
-            this.rate = rate;
-        }
-
-        String type() { return "PartTime"; }
-        double pay() { return hours * rate; }
-    }
-
-    static class Intern extends Staff {
-        double stipend;
-
-        Intern(String name, double stipend) {
-            super(name);
-            this.stipend = stipend;
-        }
-
-        String type() { return "Intern"; }
-        double pay() { return stipend; }
-    }
-
-    static String formatPay(double amount) {
-        if (amount == Math.floor(amount)) {
-            return String.valueOf((long) amount);
-        }
-        return String.format(Locale.US, "%.2f", amount);
-    }
-
-    static Staff createStaff(String[] parts) {
-        switch (parts[0]) {
-            case "FullTime":
-                return new FullTime(parts[1], Double.parseDouble(parts[2]));
-            case "PartTime":
-                return new PartTime(parts[1],
-                        Double.parseDouble(parts[2]),
-                        Double.parseDouble(parts[3]));
-            case "Intern":
-                return new Intern(parts[1], Double.parseDouble(parts[2]));
-            default:
-                throw new IllegalArgumentException("Unknown staff type: " + parts[0]);
+            for (int i = 0; i < turns; i++) {
+                if (i > 0) System.out.print(" ");
+                System.out.print(current.name);
+                current = current.next;
+            }
+            System.out.println();
         }
     }
 
     public static void main(String[] args) {
-        List<Staff> staffMembers = new ArrayList<>();
-        Scanner scanner = new Scanner(System.in);
+        CircularPlayerList players = new CircularPlayerList();
+        players.addLast("Asha");
+        players.addLast("Ravi");
+        players.addLast("Neha");
 
-        while (scanner.hasNextLine()) {
-            String line = scanner.nextLine().trim();
-            if (line.isEmpty()) continue;
-
-            staffMembers.add(createStaff(line.split("\\s+")));
-        }
-
-        double total = 0;
-        Staff topEarner = null;
-
-        for (Staff staff : staffMembers) {
-            System.out.println(staff.payslip());
-            total += staff.pay();
-
-            if (topEarner == null || staff.pay() > topEarner.pay()) {
-                topEarner = staff;
-            }
-        }
-
-        System.out.println("Total " + formatPay(total));
-        if (topEarner != null) {
-            System.out.println("top earner " + topEarner.name);
-        }
-
-        scanner.close();
+        players.printTurns(7);
     }
 }

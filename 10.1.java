@@ -1,80 +1,83 @@
-import java.util.*;
-
 public class Main {
-    static abstract class BankAccount {
-        String id;
-        long balance;
+    static class Node {
+        int data;
+        Node next;
 
-        BankAccount(String id, long balance) {
-            this.id = id;
-            this.balance = balance;
+        Node(int data) {
+            this.data = data;
+        }
+    }
+
+    static class SinglyLinkedList {
+        private Node head;
+        private int size;
+
+        public void addFirst(int token) {
+            Node newNode = new Node(token);
+            newNode.next = head;
+            head = newNode;
+            size++;
         }
 
-        abstract String withdrawalError(long amount);
+        public void addLast(int token) {
+            Node newNode = new Node(token);
 
-        boolean withdraw(long amount) {
-            String error = withdrawalError(amount);
-            if (error != null) {
-                System.out.println(id + " rejected: " + error);
-                return false;
+            if (head == null) {
+                head = newNode;
+            } else {
+                Node current = head;
+                while (current.next != null) {
+                    current = current.next;
+                }
+                current.next = newNode;
             }
 
-            balance -= amount;
-            System.out.println(id + " balance " + balance);
-            return true;
-        }
-    }
-
-    static class SavingsAccount extends BankAccount {
-        SavingsAccount(String id, long balance) {
-            super(id, balance);
+            size++;
         }
 
-        @Override
-        String withdrawalError(long amount) {
-            if (balance - amount < 1000) return "minimum balance 1000";
-            return null;
-        }
-    }
+        public void insertAt(int index, int token) {
+            if (index < 0 || index > size) {
+                throw new IndexOutOfBoundsException("Invalid index: " + index);
+            }
 
-    static class CurrentAccount extends BankAccount {
-        CurrentAccount(String id, long balance) {
-            super(id, balance);
+            if (index == 0) {
+                addFirst(token);
+                return;
+            }
+
+            Node previous = head;
+            for (int i = 0; i < index - 1; i++) {
+                previous = previous.next;
+            }
+
+            Node newNode = new Node(token);
+            newNode.next = previous.next;
+            previous.next = newNode;
+            size++;
         }
 
-        @Override
-        String withdrawalError(long amount) {
-            if (balance - amount < -5000) return "overdraft limit 5000";
-            return null;
+        public void printList() {
+            Node current = head;
+
+            while (current != null) {
+                System.out.print(current.data + " -> ");
+                current = current.next;
+            }
+            System.out.println("null");
         }
     }
 
     public static void main(String[] args) {
-        Map<String, BankAccount> accounts = new HashMap<>();
-        Scanner scanner = new Scanner(System.in);
+        SinglyLinkedList tokens = new SinglyLinkedList();
 
-        while (scanner.hasNextLine()) {
-            String line = scanner.nextLine().trim();
-            if (line.isEmpty()) continue;
+        tokens.addLast(101);
+        tokens.addLast(102);
+        tokens.addLast(103);
 
-            String[] parts = line.split("\\s+");
+        tokens.addFirst(100);
+        tokens.addLast(104);
+        tokens.insertAt(2, 150);
 
-            if (parts[0].equalsIgnoreCase("Savings")) {
-                accounts.put(parts[1],
-                        new SavingsAccount(parts[1], Long.parseLong(parts[2])));
-            } else if (parts[0].equalsIgnoreCase("Current")) {
-                accounts.put(parts[1],
-                        new CurrentAccount(parts[1], Long.parseLong(parts[2])));
-            } else if (parts[0].equalsIgnoreCase("WITHDRAW")) {
-                BankAccount account = accounts.get(parts[1]);
-                if (account == null) {
-                    System.out.println("Account not found");
-                } else {
-                    account.withdraw(Long.parseLong(parts[2]));
-                }
-            }
-        }
-
-        scanner.close();
+        tokens.printList();
     }
 }
