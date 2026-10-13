@@ -1,6 +1,103 @@
 import java.time.LocalDate;
 import java.util.*;
 
+interface MembershipPlan {
+    String name();
+    int months();
+    double discount();
+
+    default double calculateFee() {
+        return 1000.0 * months() * (1.0 - discount());
+    }
+}
+
+class MonthlyPlan implements MembershipPlan {
+    public String name() { return "Monthly"; }
+    public int months() { return 1; }
+    public double discount() { return 0; }
+}
+
+class QuarterlyPlan implements MembershipPlan {
+    public String name() { return "Quarterly"; }
+    public int months() { return 3; }
+    public double discount() { return 0.10; }
+}
+
+class AnnualPlan implements MembershipPlan {
+    public String name() { return "Annual"; }
+    public int months() { return 12; }
+    public double discount() { return 0.25; }
+}
+
+enum MembershipStatus { ACTIVE, FROZEN, EXPIRED }
+
+class Member {
+    private final String name;
+
+    Member(String name) { this.name = name; }
+    String getName() { return name; }
+}
+
+class Membership {
+    private final Member member;
+    private final MembershipPlan plan;
+    private MembershipStatus status = MembershipStatus.ACTIVE;
+
+    Membership(Member member, MembershipPlan plan) {
+        this.member = member;
+        this.plan = plan;
+    }
+
+    MembershipStatus getStatus() { return status; }
+
+    void checkIn() {
+        if (status == MembershipStatus.ACTIVE) {
+            System.out.println(member.getName() + " checked in successfully.");
+        } else {
+            System.out.println("Check-in denied: " + member.getName()
+                    + "'s membership is " + status + ".");
+        }
+    }
+
+    void freeze() {
+        if (status == MembershipStatus.EXPIRED) {
+            System.out.println("Cannot freeze an Expired membership.");
+        } else if (status == MembershipStatus.FROZEN) {
+            System.out.println(member.getName()
+                    + "'s membership is already Frozen.");
+        } else {
+            status = MembershipStatus.FROZEN;
+            System.out.println(member.getName()
+                    + "'s membership frozen. Status: " + status + ".");
+        }
+    }
+
+    void unfreeze() {
+        if (status == MembershipStatus.EXPIRED) {
+            System.out.println("Cannot unfreeze an Expired membership.");
+        } else if (status == MembershipStatus.FROZEN) {
+            status = MembershipStatus.ACTIVE;
+            System.out.println(member.getName()
+                    + "'s membership unfrozen. Status: " + status + ".");
+        }
+    }
+
+    void expire() {
+        status = MembershipStatus.EXPIRED;
+        System.out.println(member.getName()
+                + "'s membership expired. Status: " + status + ".");
+    }
+}
+
+class MembershipDesk {
+    Membership buy(Member member, MembershipPlan plan) {
+        Membership membership = new Membership(member, plan);
+        System.out.printf("%s membership created for %s. Fee: ₹%.2f. Status: Active.%n",
+                plan.name(), member.getName(), plan.calculateFee());
+        return membership;
+    }
+}
+
 abstract class Room {
     private final String id;
 
@@ -19,10 +116,12 @@ class StandardRoom extends Room {
     public StandardRoom(String id) { super(id); }
     @Override public double pricePerNight() { return 100.0; }
 }
+
 class DeluxeRoom extends Room {
     public DeluxeRoom(String id) { super(id); }
     @Override public double pricePerNight() { return 180.0; }
 }
+
 class Suite extends Room {
     public Suite(String id) { super(id); }
     @Override public double pricePerNight() { return 300.0; }
@@ -30,6 +129,7 @@ class Suite extends Room {
 
 class Customer {
     private final String name;
+
     public Customer(String name) { this.name = name; }
     public String getName() { return name; }
 }
@@ -57,10 +157,9 @@ class Reservation {
 
     public Room getRoom() { return room; }
     public Customer getCustomer() { return customer; }
-    public LocalDate getCheckIn() { return checkIn; }
-    public LocalDate getCheckOut() { return checkOut; }
     public boolean isActive() { return active; }
     public void cancel() { active = false; }
+
     public boolean isPastCancellationDeadline(LocalDate today) {
         return today.isAfter(cancellationDeadline);
     }
@@ -85,7 +184,8 @@ class BookingSystem {
         Reservation reservation = new Reservation(room, customer, start, end,
                 cancellationDeadline);
         reservations.add(reservation);
-        System.out.printf("Reservation confirmed for %s, %s (%s to %s). Price: $%.2f%n",
+        System.out.printf(
+                "Reservation confirmed for %s, %s (%s to %s). Price: $%.2f%n",
                 customer.getName(), room.getId(), start, end,
                 room.calculatePrice(start, end));
         return reservation;
@@ -97,16 +197,32 @@ class BookingSystem {
             System.out.println("Cancellation deadline has passed.");
             return false;
         }
+
         reservation.cancel();
         System.out.println("Reservation for " + reservation.getCustomer().getName()
-                + ", " + reservation.getRoom().getId() + " cancelled successfully.");
+                + ", " + reservation.getRoom().getId()
+                + " cancelled successfully.");
         return true;
     }
 }
 
 public class Main {
     public static void main(String[] args) {
-        BookingSystem system = new BookingSystem();
+        // Membership example
+        MembershipDesk desk = new MembershipDesk();
+        Membership asha = desk.buy(new Member("Asha"), new QuarterlyPlan());
+        Membership ravi = desk.buy(new Member("Ravi"), new MonthlyPlan());
+
+        asha.checkIn();
+        asha.freeze();
+        asha.checkIn();
+        ravi.expire();
+        ravi.freeze();
+
+        System.out.println();
+
+        // Hotel booking example
+        BookingSystem bookingSystem = new BookingSystem();
         Room standard = new StandardRoom("Standard Room 101");
         Customer customerA = new Customer("Customer A");
 
@@ -114,16 +230,17 @@ public class Main {
         LocalDate end = LocalDate.of(2027, 1, 5);
 
         System.out.println(standard.getId() + " is "
-                + (system.isAvailable(standard, start, end) ? "available" : "not available")
+                + (bookingSystem.isAvailable(standard, start, end)
+                        ? "available" : "not available")
                 + " from " + start + " to " + end + ".");
 
-        Reservation reservation = system.reserve(standard, customerA, start, end,
-                LocalDate.of(2026, 12, 20));
+        Reservation reservation = bookingSystem.reserve(
+                standard, customerA, start, end, LocalDate.of(2026, 12, 20));
 
-        system.reserve(standard, new Customer("Customer B"),
+        bookingSystem.reserve(standard, new Customer("Customer B"),
                 LocalDate.of(2027, 1, 3), LocalDate.of(2027, 1, 7),
                 LocalDate.of(2026, 12, 20));
 
-        system.cancel(reservation, LocalDate.of(2026, 12, 15));
+        bookingSystem.cancel(reservation, LocalDate.of(2026, 12, 15));
     }
 }
